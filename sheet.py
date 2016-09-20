@@ -1,8 +1,6 @@
 #! C:/Python32/python.exe
 # coding: UTF-8
 
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
 from line import *
 import operator
 import copy
@@ -16,30 +14,27 @@ soc=[[[3],[5],[3,1],[2,1],[3,3,4],[2,2,7],[6,1,1],[4,2,2],[1,1],[3,1],[6],[2,7],
 kam=[[[6],[6],[1,1],[10,5],[1,2,8],[1,1,5,3],[1,1,1,4,1,2],[1,1,4,4,1],[1,1,2,7],[4,12],[1,9,1],[3,9,1],[2,6,2],[5,7],[2],[1,8],[1,3,4],[1,2],[1,1],[7]]
      ,[[1,5],[2,2],[4,1,1],[2,1,2,1],[2,1,1],[2,1,2,1],[2,1,2],[5,1,1,2],[7,3,1],[1,5,2,1],[2,3,1,1,1],[3,4,1,1],[3,5,2,1],[3,6,1,1,1],[2,7,1,1,1],[3,7,1,2],[2,8,2],[3,5,1,2],[4,2,2,2],[5,4,2]]]
 
-class Sheet(QObject):
-    
-    error=pyqtSignal(str)
-    sccess=pyqtSignal(str)
-    progressed=pyqtSignal(int)
-    
+class Sheet():
+
     def __init__(self,parent=None):
-        QObject.__init__(self,parent=parent)
         self.width=0
         self.height=0
         self.matrix=[]
         self.lines=[]
         self.answers=[]
         self.progress=0
-        
+
     def Solve(self,rowkeys,colkeys):
         if self.SetSheet(rowkeys, colkeys):
             sheet=self.Clone()
             self.Search(sheet,100.0)
             if len(self.answers)==0:
-                self.error.emit("解がありませんでした。")
+                print("解がありませんでした。")
             else:
-                self.sccess.emit(str(len(self.answers))+"個の解が見つかりました。")
-    
+                print(str(len(self.answers))+"個の解が見つかりました。")
+                for answer in self.answers:
+                    print(self.ToString(answer) + "\n")
+
     def SetSheet(self,rowkeys,colkeys):
         if self.KeyCheck(rowkeys, colkeys):
             self.width=len(colkeys)
@@ -50,7 +45,7 @@ class Sheet(QObject):
         else:
             self.error.emit("初期化に失敗しました。")
             return False
-        
+
     def KeyCheck(self,rowkeys,colkeys):
         consistent=True
         rowsum=0
@@ -79,15 +74,15 @@ class Sheet(QObject):
                 self.error.emit(str(i)+"列の鍵の合計値が大きすぎます。")
         if rowsum!=colsum:
             consistent=False
-            self.error.emit("縦と横の鍵の総合計値が違います")         
+            self.error.emit("縦と横の鍵の総合計値が違います")
         return consistent
- 
+
     def InitMatrix(self):
         matrix=[]
         for i in range(self.height):
             matrix.append([0]*self.width)
         return matrix
-    
+
     def SetLines(self,rowkeys,colkeys):#行の番号はそのまま、列の番号は列番号+高さで全体を通し番号で管理
         for i in range(self.height):
             self.lines.append(Line(rowkeys[i],self.width,i))
@@ -109,9 +104,9 @@ class Sheet(QObject):
                         self.UpdateLine(line.number,line.GetSequence())
 #                        print(self.ToString(self.matrix)+"\n")
                     else:
-                        return False 
+                        return False
         return True
-    
+
     def Search(self,sheet,value):
         if sheet.Sieving():
             line=sheet.InCompleteLine()
@@ -124,32 +119,31 @@ class Sheet(QObject):
                     sheet=oldsheet.Clone()
             else:
                 self.progress+=value
-                self.progressed.emit(self.progress)
                 self.answers.append(sheet.matrix)
         else:
             self.progress+=value
-            self.progressed.emit(self.progress)
+            print(self.progress)
 
-                
+
     def InCompleteLine(self):
         for line in self.lines:
             if not line.complete:
                 return line
         return None
-    
+
     def Sequence(self,number):
         if number<self.height:
             return self.matrix[number]
         else:
             return list(map(operator.itemgetter(number-self.height),self.matrix))
-    
+
     def Updated(self,matrix):
         for i in range(self.height):
             for j in range(self.width):
                 if self.matrix[i][j]!=matrix[i][j]:
                     return True
         return False
-    
+
     def UpdateLine(self,number,sequence):
         if number<self.height:
             self.matrix[number]=sequence
@@ -162,7 +156,7 @@ class Sheet(QObject):
         for n in range(i,j+1):
             keys.append(self.lines[n].key)
         return tuple(keys)
-                
+
     def ToString(self,matrix):
         string=""
         for i in range(len(matrix)):
@@ -177,9 +171,9 @@ class Sheet(QObject):
             string+="\n"
         string=string[:len(string)-1]
         return string
-    
+
     def Clone(self):
-        sheet=Sheet(parent=self.parent())
+        sheet=Sheet()
         sheet.width=self.width
         sheet.height=self.height
         sheet.matrix=copy.deepcopy(self.matrix)
@@ -190,4 +184,5 @@ class Sheet(QObject):
 
 if __name__ =="__main__":
     s=Sheet()
-    s.Solve(kam[0], kam[1])
+    keys = soc
+    s.Solve(keys[0], keys[1])
